@@ -1749,15 +1749,7 @@ static int ProcessTypeDecl(Token * pList, int flags, int * pReset)
   for (pEnd = pName->pNext; pEnd && pEnd->eType != TT_Braces;
        pEnd = pEnd->pNext)
   {
-    switch (pEnd->zText[0])
-    {
-    case '(':
-    case '*':
-    case '[':
-    case '=':
-    case ';':
-      return 0;
-    }
+    return 0;
   }
   if (pEnd == 0)
   {

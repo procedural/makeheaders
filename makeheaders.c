@@ -198,7 +198,7 @@ struct Decl
                               ** and "#endif" */
 #define PS_Export2 0x002000   /* If "EXPORT" seen */
 #define PS_Typedef 0x004000   /* If "typedef" has been seen */
-#define PS_Static 0x008000    /* If "static" has been seen */
+#define PS_Static 0x008000    /* If "static" or "internal" has been seen */
 #define PS_Interface 0x010000 /* If within #if INTERFACE..#endif */
 #define PS_Method 0x020000    /* If "::" token has been seen */
 #define PS_Local 0x040000     /* If within #if LOCAL_INTERFACE..#endif */
@@ -1955,10 +1955,11 @@ static Token * FindDeclName(Token * pFirst, Token * pLast)
       static IdentTable sReserved;
       static int isInit = 0;
       static char * aWords[] = {
-          "char",      "class",   "const",    "double",   "enum",    "extern",
-          "EXPORT",    "ET_PROC", "float",    "int",      "long",    "PRIVATE",
-          "PROTECTED", "PUBLIC",  "register", "static",   "struct",  "sizeof",
-          "signed",    "typedef", "union",    "volatile", "virtual", "void",
+          "char",   "class",    "const",     "double", "enum",
+          "extern", "EXPORT",   "ET_PROC",   "float",  "int",
+          "long",   "PRIVATE",  "PROTECTED", "PUBLIC", "register",
+          "static", "struct",   "sizeof",    "signed", "typedef",
+          "union",  "volatile", "virtual",   "void",   "internal",
       };
 
       if (!isInit)
@@ -2333,9 +2334,10 @@ static int ProcessDecl(Token * pFirst, Token * pEnd, int flags)
     }
     while (pFirst != 0 && pFirst->pNext != pEnd &&
            ((pFirst->nText == 6 && strncmp(pFirst->zText, "static", 6) == 0) ||
-            (pFirst->nText == 5 && strncmp(pFirst->zText, "LOCAL", 6) == 0)))
+            (pFirst->nText == 5 && strncmp(pFirst->zText, "LOCAL", 6) == 0) ||
+            (pFirst->nText == 8 && strncmp(pFirst->zText, "internal", 8) == 0)))
     {
-      /* Lose the initial "static" or local from local variables.
+      /* Lose the initial "static" or "internal" or local from local variables.
       ** We'll prepend "extern" later. */
       pFirst = pFirst->pNext;
       isLocal = 1;
@@ -2866,6 +2868,10 @@ static int ParseFile(Token * pList, int initFlags)
         if (pList->nText == 6 && strncmp(pList->zText, "inline", 6) == 0)
         {
           nErr += ProcessInlineProc(pList, flags, &resetFlag);
+        }
+        else if (pList->nText == 8 && strncmp(pList->zText, "internal", 8) == 0)
+        {
+          flags |= PS_Static;
         }
         break;
 
@@ -3923,9 +3929,6 @@ static void Usage(const char * argv0, const char * argvN)
       "  -f FILE     Read additional command-line arguments from the file "
       "named\n"
       "              \"FILE\".\n"
-#ifdef DEBUG
-      "  -! MASK     Set the debugging mask to the number \"MASK\".\n"
-#endif
       "  --          Treat all subsequent comment-line parameters as "
       "filenames,\n"
       "              even if they begin with \"-\".\n",

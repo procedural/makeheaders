@@ -52,41 +52,6 @@ static const char ident[] = "@(#) $Header: /cvstrac/cvstrac/makeheaders.c,v "
 #endif
 
 /*
-** Macros for debugging.
-*/
-#ifdef DEBUG
-static int debugMask = 0;
-#define debug0(F, M)                                                           \
-  if ((F)&debugMask)                                                           \
-  {                                                                            \
-    fprintf(stderr, M);                                                        \
-  }
-#define debug1(F, M, A)                                                        \
-  if ((F)&debugMask)                                                           \
-  {                                                                            \
-    fprintf(stderr, M, A);                                                     \
-  }
-#define debug2(F, M, A, B)                                                     \
-  if ((F)&debugMask)                                                           \
-  {                                                                            \
-    fprintf(stderr, M, A, B);                                                  \
-  }
-#define debug3(F, M, A, B, C)                                                  \
-  if ((F)&debugMask)                                                           \
-  {                                                                            \
-    fprintf(stderr, M, A, B, C);                                               \
-  }
-#define PARSER 0x00000001
-#define DECL_DUMP 0x00000002
-#define TOKENIZER 0x00000004
-#else
-#define debug0(Flags, Format)
-#define debug1(Flags, Format, A)
-#define debug2(Flags, Format, A, B)
-#define debug3(Flags, Format, A, B, C)
-#endif
-
-/*
 ** The following macros are purely for the purpose of testing this
 ** program on itself.  They don't really contribute to the code.
 */
@@ -1490,9 +1455,11 @@ static Token * TokenizeFile(const char * zFile, IdentTable * pTable)
   {
     pNew = SafeMalloc(sizeof(Token));
     nErr += GetBigToken(&sIn, pNew, pTable);
-    debug3(
-        TOKENIZER, "Token on line %d: [%.*s]\n", pNew->nLine,
+#ifdef DEBUG
+    printf(
+        "Token on line %d: [%.*s]\n", pNew->nLine,
         pNew->nText < 50 ? pNew->nText : 50, pNew->zText);
+#endif
     if (pFirst == 0)
     {
       pFirst = pLast = pNew;
@@ -1826,14 +1793,11 @@ static int ProcessTypeDecl(Token * pList, int flags, int * pReset)
   }
 
 #ifdef DEBUG
-  if (debugMask & PARSER)
-  {
-    printf(
-        "**** Found type: %.*s %.*s...\n", pList->nText, pList->zText,
-        pName->nText, pName->zText);
-    PrintTokens(pList, pEnd);
-    printf(";\n");
-  }
+  printf(
+      "**** Found type: %.*s %.*s...\n", pList->nText, pList->zText,
+      pName->nText, pName->zText);
+  PrintTokens(pList, pEnd);
+  printf(";\n");
 #endif
 
   /*
@@ -2186,14 +2150,11 @@ static int ProcessProcedureDef(Token * pFirst, Token * pLast, int flags)
 ** and pLast with the name pName.
 */
 #ifdef DEBUG
-  if (debugMask & PARSER)
-  {
-    printf(
-        "**** Found routine: %.*s on line %d...\n", pName->nText, pName->zText,
-        pFirst->nLine);
-    PrintTokens(pFirst, pLast);
-    printf(";\n");
-  }
+  printf(
+      "**** Found routine: %.*s on line %d...\n", pName->nText, pName->zText,
+      pFirst->nLine);
+  PrintTokens(pFirst, pLast);
+  printf(";\n");
 #endif
   pDecl = CreateDecl(pName->zText, pName->nText);
   pDecl->pComment = pFirst->pComment;
@@ -2261,14 +2222,11 @@ static int ProcessInlineProc(Token * pFirst, int flags, int * pReset)
   }
 
 #ifdef DEBUG
-  if (debugMask & PARSER)
-  {
-    printf(
-        "**** Found inline routine: %.*s on line %d...\n", pName->nText,
-        pName->zText, pFirst->nLine);
-    PrintTokens(pFirst, pEnd);
-    printf("\n");
-  }
+  printf(
+      "**** Found inline routine: %.*s on line %d...\n", pName->nText,
+      pName->zText, pFirst->nLine);
+  PrintTokens(pFirst, pEnd);
+  printf("\n");
 #endif
   pDecl = CreateDecl(pName->zText, pName->nText);
   pDecl->pComment = pFirst->pComment;
@@ -2420,29 +2378,26 @@ static int ProcessDecl(Token * pFirst, Token * pEnd, int flags)
   }
 
 #ifdef DEBUG
-  if (debugMask & PARSER)
+  if (flags & PS_Typedef)
   {
-    if (flags & PS_Typedef)
-    {
-      printf(
-          "**** Found typedef %.*s at line %d...\n", pName->nText, pName->zText,
-          pName->nLine);
-    }
-    else if (isVar)
-    {
-      printf(
-          "**** Found variable %.*s at line %d...\n", pName->nText,
-          pName->zText, pName->nLine);
-    }
-    else
-    {
-      printf(
-          "**** Found prototype %.*s at line %d...\n", pName->nText,
-          pName->zText, pName->nLine);
-    }
-    PrintTokens(pFirst, pEnd->pPrev);
-    printf(";\n");
+    printf(
+        "**** Found typedef %.*s at line %d...\n", pName->nText, pName->zText,
+        pName->nLine);
   }
+  else if (isVar)
+  {
+    printf(
+        "**** Found variable %.*s at line %d...\n", pName->nText, pName->zText,
+        pName->nLine);
+  }
+  else
+  {
+    printf(
+        "**** Found prototype %.*s at line %d...\n", pName->nText, pName->zText,
+        pName->nLine);
+  }
+  PrintTokens(pFirst, pEnd->pPrev);
+  printf(";\n");
 #endif
 
   pDecl = CreateDecl(pName->zText, pName->nText);
@@ -4042,12 +3997,6 @@ int main(int argc, char ** argv)
       case '-':
         noMoreFlags = 1;
         break;
-#ifdef DEBUG
-      case '!':
-        i++;
-        debugMask = strtol(argv[i], 0, 0);
-        break;
-#endif
       default:
         Usage(argv[0], argv[i]);
         return 1;
@@ -4134,13 +4083,6 @@ int main(int argc, char ** argv)
   {
     return nErr;
   }
-#ifdef DEBUG
-  if (debugMask & DECL_DUMP)
-  {
-    DumpDeclList();
-    return nErr;
-  }
-#endif
   if (doc_flag)
   {
     DocumentationDump();

@@ -329,8 +329,8 @@ struct GenState
 ** by this program.  By recognizing this line, the program can be sure
 ** never to read a file that it generated itself.
 */
-const char zTopLine[] = "#pragma once\n"
-                        "#include \"required.h\"\n";
+const char zTopLine[] = "#pragma once\n\n"
+                        "#include \"required.h\"\n\n";
 #define nTopLine (sizeof(zTopLine) - 1)
 
 /*
@@ -1841,7 +1841,7 @@ static int ProcessTypeDecl(Token * pList, int flags, int * pReset)
   */
   if (flags & (PS_Local | PS_Export | PS_Interface))
   {
-    pDecl->zDecl = TokensToString(pList, pEnd, ";\n", 0, 0);
+    pDecl->zDecl = TokensToString(pList, pEnd, ";\n\n", 0, 0);
   }
   else
   {
@@ -2074,7 +2074,7 @@ static int ProcessMethodDef(Token * pFirst, Token * pLast, int flags)
     }
   }
   StringAppend(&str, "  ", 0);
-  zDecl = TokensToString(pFirst, pLast, ";\n", pClass, 2);
+  zDecl = TokensToString(pFirst, pLast, ";\n\n", pClass, 2);
   StringAppend(&str, zDecl, 0);
   SafeFree(zDecl);
   pDecl->zExtra = StrDup(StringGet(&str), 0);
@@ -2156,7 +2156,7 @@ static int ProcessProcedureDef(Token * pFirst, Token * pLast, int flags)
     pDecl->tokenCode = *pCode;
   }
   DeclSetProperty(pDecl, TY_Subroutine);
-  pDecl->zDecl = TokensToString(pFirst, pLast, ";\n", 0, 0);
+  pDecl->zDecl = TokensToString(pFirst, pLast, ";\n\n", 0, 0);
   if ((flags & (PS_Static | PS_Local2)) != 0)
   {
     DeclSetProperty(pDecl, DP_Local);
@@ -2224,7 +2224,7 @@ static int ProcessInlineProc(Token * pFirst, int flags, int * pReset)
   pDecl = CreateDecl(pName->zText, pName->nText);
   pDecl->pComment = pFirst->pComment;
   DeclSetProperty(pDecl, TY_Subroutine);
-  pDecl->zDecl = TokensToString(pFirst, pEnd, ";\n", 0, 0);
+  pDecl->zDecl = TokensToString(pFirst, pEnd, ";\n\n", 0, 0);
   if ((flags & (PS_Static | PS_Local | PS_Local2)))
   {
     DeclSetProperty(pDecl, DP_Local);
@@ -2416,7 +2416,7 @@ static int ProcessDecl(Token * pFirst, Token * pEnd, int flags)
     }
   }
   pDecl->pComment = pFirst->pComment;
-  pDecl->zDecl = TokensToString(pFirst, pEnd->pPrev, ";\n", 0, 0);
+  pDecl->zDecl = TokensToString(pFirst, pEnd->pPrev, ";\n\n", 0, 0);
   if (isLocal || (flags & (PS_Local | PS_Local2)) != 0)
   {
     DeclSetProperty(pDecl, DP_Local);
